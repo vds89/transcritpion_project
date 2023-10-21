@@ -1,15 +1,28 @@
 from django.shortcuts import render
-
-# Create your views here.
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from .models import UploadedFile
+from .forms import SignupForm
 from django.conf import settings
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.contrib.auth.models import User
+
 import subprocess
 import os
 
+
+# Create your views here.
+# Home page
+def index(request):
+    return render(request, 'login.html')
+
+@login_required
 def upload_file(request):
-    if request.method == 'POST' and request.FILES['file']:
+    if request.method == 'POST' and 'file' in request.FILES:
         uploaded_file = request.FILES['file']
         print('UPLOADED_filename ------------------------> ' + str(uploaded_file))
         instance = UploadedFile(file=uploaded_file)
@@ -32,3 +45,46 @@ def upload_file(request):
         else:
             return HttpResponse('Transcript not found.')
     return render(request, 'upload.html')
+
+def signup(request):
+    if request.method == 'POST':
+        form = SignupForm(request.POST)
+        if form.is_valid():
+            # Check if the username or email already exists
+            username = form.cleaned_data['username']
+            email = form.cleaned_data['email']
+            if User.objects.filter(username=username).exists():
+                messages.error(request, 'Username already exists.')
+            elif User.objects.filter(email=email).exists():
+                messages.error(request, 'Email already exists.')
+            else:
+                # Username and email are unique, so save the user
+                user = form.save()
+                login(request, user)
+                messages.success(request, 'User registered successfully.')
+                return redirect('login')  # Redirect to a login view
+    else:
+        print("SIGNUP FAILED !!!!!!")  # Debugging statement
+        form = SignupForm()
+    return render(request, 'signup.html', {'form': form})
+
+def user_login(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        print('You are in the login check')
+        print(user)
+        if user is not None:
+            login(request, user)
+            return redirect('upload_file')  # Redirect to a dashboard or home page
+        else:
+            # Handle login error
+            print('LOGIN FAILED BECAUSE USER is NONE !!!!!!')
+            pass  # You can customize the error handling here
+    print('LOGIN FAILED !!!!!!')
+    return render(request, 'login.html')
+
+def user_logout(request):
+    logout(request)
+    return redirect('login')
