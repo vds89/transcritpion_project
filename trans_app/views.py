@@ -77,12 +77,13 @@ def user_login(request):
         print(user)
         if user is not None:
             login(request, user)
+            print('LOGIN OK')
             return redirect('upload_file')  # Redirect to a dashboard or home page
         else:
             # Handle login error
             print('LOGIN FAILED BECAUSE USER is NONE !!!!!!')
             pass  # You can customize the error handling here
-    print('LOGIN FAILED !!!!!!')
+    print('OUT of LOGIN !!!!!!')
     return render(request, 'login.html')
 
 def user_logout(request):
