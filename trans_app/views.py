@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .models import UploadedFile
+from .models import UploadedFile, CustomUser, EmailConfirmation
 from .forms import SignupForm
 from django.conf import settings
 from django.contrib.auth import login, authenticate
@@ -10,6 +10,11 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
+from allauth.account.views import SignupView
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.sites.shortcuts import get_current_site
+from django.urls import reverse
+from django.core.mail import send_mail
 
 import subprocess
 import os
@@ -46,7 +51,7 @@ def upload_file(request):
             return HttpResponse('Transcript not found.')
     return render(request, 'upload.html')
 
-def signup(request):
+'''def signup(request):
     if request.method == 'POST':
         form = SignupForm(request.POST)
         if form.is_valid():
@@ -67,14 +72,20 @@ def signup(request):
         print("SIGNUP FAILED !!!!!!")  # Debugging statement
         form = SignupForm()
     return render(request, 'signup.html', {'form': form})
+'''
+
+def signup(request):
+    return SignupView.as_view()(request)
 
 def user_login(request):
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
+        print('USERNAME: ' + str(username))
+        print('PASSWORD: ' + str(password))
         user = authenticate(request, username=username, password=password)
         print('You are in the login check')
-        print(user)
+        print('USER: ' + str(user))
         if user is not None:
             login(request, user)
             print('LOGIN OK')
@@ -89,3 +100,31 @@ def user_login(request):
 def user_logout(request):
     logout(request)
     return redirect('login')
+
+
+def send_email_confirmation(request, user):
+    token = default_token_generator.make_token(user)
+    email_confirmation = EmailConfirmation.objects.create(user=user, token=token)
+    email_confirmation.save()
+    
+    current_site = get_current_site(request)
+    mail_subject = "Confirm your email"
+    message = f"Click the link below to confirm your email:\n"
+    message += f"http://{current_site}{reverse('confirm_email', args=[str(email_confirmation.token)])}"
+    
+    send_mail(mail_subject, message, 'ingegnere31@hotmail.it', [user.email])
+
+def confirm_email(request, token):
+    try:
+        email_confirmation = EmailConfirmation.objects.get(token=token, is_confirmed=False)
+        user = email_confirmation.user
+        default_token = default_token_generator.make_token(user)
+        if email_confirmation.token == default_token:
+            email_confirmation.is_confirmed = True
+            email_confirmation.save()
+            login(request, user)
+            return redirect(reverse('login'))  # Redirect to the user's profile page
+    except EmailConfirmation.DoesNotExist:
+        # Handle invalid or expired confirmation links
+        pass
+    return render(request, 'email_confirmation_failed.html')

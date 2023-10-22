@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-hn=fyks#6u$@v8ya=lmqsr0!%*117+x845aw#*$mn+klw%_s25
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['vds89.pythonanywhere.com']
+ALLOWED_HOSTS = ['vds89.pythonanywhere.com', '127.0.0.1']
 
 # Application definition
 
@@ -37,6 +37,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.facebook",
 ]
 
 MIDDLEWARE = [
@@ -47,6 +52,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = "transcritpion_project.urls"
@@ -99,6 +105,26 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# settings.py
+
+# Authentication backends
+AUTHENTICATION_BACKENDS = (
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+
+# Account and email settings
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_UNIQUE_USERNAME = True
+ACCOUNT_LOGOUT_ON_GET = True
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp-relay.sendinblue.com'  # Replace with your SMTP server address
+EMAIL_PORT = 587  # Replace with the appropriate port (587 for TLS, 465 for SSL, 25 for non-secure)
+EMAIL_USE_TLS = True  # Use TLS for secure connection, or set it to False if not needed
+EMAIL_HOST_USER = 'ingegnere31@hotmail.it'  # Replace with your email address
+EMAIL_HOST_PASSWORD = 'N53FHZfSRqvnaWV7'  # Replace with your email password
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
